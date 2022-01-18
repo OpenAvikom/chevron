@@ -210,6 +210,8 @@ def render(template='', data={}, partials_path='.', partials_ext='mustache',
 
         # If we're an end tag
         if tag == 'end':
+            if keep and isinstance(current_scope, string_type) and current_scope.startswith("{{"):
+                output += f"{{{{/{key}}}}}"
             # Pop out of the latest scope
             del scopes[0]
 
@@ -236,6 +238,9 @@ def render(template='', data={}, partials_path='.', partials_ext='mustache',
                 # (inverted tags do this)
                 # then get the un-coerced object (next in the stack)
                 thing = scopes[1]
+            # an unresolved section has been chosen
+            elif keep and key == '.' and isinstance(thing, string_type) and thing.startswith("{{"):
+                thing = "{{.}}"
             if not isinstance(thing, unicode_type):
                 thing = unicode(str(thing), 'utf-8')
             output += _html_escape(thing)
@@ -251,7 +256,10 @@ def render(template='', data={}, partials_path='.', partials_ext='mustache',
         # If we're a section tag
         elif tag == 'section':
             # Get the sections scope
-            scope = _get_key(key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel)
+            scope = _get_key(key, scopes, warn=warn, keep=False, def_ldel=def_ldel, def_rdel=def_rdel)
+            if keep and not scope:
+                scope = f"{{{{#{key}}}}}"
+                output += scope
 
             # If the scope is a callable (as described in
             # https://mustache.github.io/mustache.5.html)
@@ -343,8 +351,13 @@ def render(template='', data={}, partials_path='.', partials_ext='mustache',
         # If we're an inverted section
         elif tag == 'inverted section':
             # Add the flipped scope to the scopes
-            scope = _get_key(key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel)
-            scopes.insert(0, not scope)
+            scope = _get_key(key, scopes, warn=warn, keep=False, def_ldel=def_ldel, def_rdel=def_rdel)
+            if keep and scope:
+                scope = f"{{{{^{key}}}}}"
+                output += scope
+                scopes.insert(0, scope)
+            else:
+                scopes.insert(0, not scope)
 
         # If we're a partial
         elif tag == 'partial':

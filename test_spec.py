@@ -517,17 +517,17 @@ class ExpandedCoverage(unittest.TestCase):
 
         result = chevron.render(**args)
         expected = '1st {{ second }} 3rd'
-        self.assertEqual(result, expected)
+        self.assertEqual(expected, result)
 
         args['template'] = '{{first}} {{second}} {{third}}'
         result = chevron.render(**args)
         expected = '1st {{ second }} 3rd'
-        self.assertEqual(result, expected)
+        self.assertEqual(expected, result)
 
         args['template'] = '{{   first    }} {{    second    }} {{    third   }}'
         result = chevron.render(**args)
         expected = '1st {{ second }} 3rd'
-        self.assertEqual(result, expected)
+        self.assertEqual(expected, result)
 
     # https://github.com/noahmorrison/chevron/pull/94
     def test_keep_from_partials(self):
@@ -544,13 +544,24 @@ class ExpandedCoverage(unittest.TestCase):
 
         result = chevron.render(**args)
         expected = '1st  3rd'
-        self.assertEqual(result, expected)
+        self.assertEqual(expected, result)
 
         args['keep'] = True
 
         result = chevron.render(**args)
         expected = '1st {{ missing_key }} 3rd'
         self.assertEqual(result, expected)
+
+    def test_keep_sections(self):
+        expected = "{{#aList}}{{.}},{{/aList}}"
+        result = chevron.render(expected, {}, keep=True)
+        self.assertEqual(expected, result)
+
+    def test_keep_inverted_sections(self):
+        expected = "{{#aList}}{{.}},{{/aList}}"
+        result = chevron.render(expected, {"aList": []}, keep=True)
+        self.assertEqual(expected, result)
+
 
 
 # Run unit tests from command line
